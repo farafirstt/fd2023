@@ -209,7 +209,8 @@ def condition(a):
 
 
 def obstacleDetect(a):
-    print("detect obstacle")
+    thres = 10 # ultrasonic sensor threshold
+    if 
 
     if a == 1 or a == 2:
         print("detect !!!!!! obstacle")
@@ -218,9 +219,6 @@ def obstacleDetect(a):
         print("didnt find any obstacle")
         return False
     return a
-    
-    
-
 
 
 ## ---------- Main program
@@ -232,7 +230,11 @@ if __name__ == '__main__':
     # Initiate serial communication
     ser = serial.Serial('/dev/ttyS0', 115200, timeout=1)
     ser.reset_input_buffer()
-    
+
+    # Set up for ultrasonic sensor
+    frontsensor = [distance(front1_trig, front1_echo), distance(front2_trig, front2_echo), distance(front3_trig, front3_echo)]
+    leftsensor = [distance(left1_trig, left1_echo), distance(left2_trig, left2_echo)]
+    rightsensor = [distance(right1_trig, right1_echo), distance(right2_trig, right2_echo)]
             
         
     # Main program
@@ -258,73 +260,6 @@ if __name__ == '__main__':
         # PID calculaiton & motor speed set
         P = db.yaw * Kp + D * Kdjk
         transmit(ser, f'{baseSpeed + P}_{baseSpeed - P}')
-        
-        # ultrasonic sensor
-        front1 = distance(front1_trig, front1_echo)
-        front2 = distance(front2_trig, front2_echo)
-        front3 = distance(front3_trig, front3_echo)
-        left1 = distance(left1_trig, left1_echo)
-        left2 = distance(left2_trig, left2_echo)
-        right1 = distance(right1_trig, right1_echo)
-        right2 = distance(right2_trig, right2_echo)
-        bottom1 = distance(bottom1_trig, bottom1_echo)
-        bottom2 = distance(bottom2_trig, bottom2_echo)
-
-        mindistance = 10
-        t = 5 # t that robot move 1 grid
-
-        # front obstacle
-        if (front1 < mindistance and front2 < mindistance) or (front1 < mindistance):
-            print('Stop')
-            slowForward()
-            print('Backward')
-            print('Right')
-            print('Forward until all left clear')
-            print('Left')
-            print('Forward for t second')
-            print('Forward until all left clear')
-            print('Left')
-            print('Forward until all left found') # can be changed to 'for t second'
-            print('Right') # back to origin track
-            normalForward()
-            print('Forward')
-
-        if (front3 < mindistance and front2 < mindistance) or (front3 < mindistance):
-            print('Stop')
-            slowForward()
-            print('Backward')
-            print('Left')
-            print('Forward until all right clear')
-            print('Right')
-            print('Forward for t second')
-            print('Forward until all right clear')
-            print('Right')
-            print('Forward until all right found') # can be changed to 'for t second'
-            print('Left') # back to origin track
-            normalForward()
-            print('Forward')
-
-        if front1 < mindistance and front2 < mindistance and front3 < mindistance:
-            print('Stop')
-            slowForward()
-            print('Backward')
-            print('Left')
-            print('Forward until right clear')
-            print('Right')
-            print('Forward for t second')
-            print('Forward until right clear')
-            print('Right')
-            print('Forward until right found') # can be changed to 'for t second'
-            print('Left') # back to origin track
-            normalForward()
-            print('Forward')
-
-        ## What if face dead end???
-        # distance between left and right is not enough to detect narrow track
-        # but it is too narooow to turn around
-        
-
-
 
 
         import time
@@ -333,34 +268,27 @@ if __name__ == '__main__':
             # Define the duration for obstacle detection (1 second)
         obstacle_detection_duration = 1  # 1 second
    
-    # set rounds
-    num_rounds = 15
-        # Loop for 10 seconds
-    for r in range(num_rounds):
-        for t in range(num_iterations):
-            # Your code to be executed during each iteration
-            print("Inside the loop")
+        # set rounds
+        num_rounds = 15
+            # Loop for 10 seconds
+        for r in range(num_rounds):
+            for t in range(num_iterations):
+                # Your code to be executed during each iteration
+                print("Inside the loop")
 
-            if obstacleDetect()==True:
-                for i in range(obstacle_detection_duration):
+                while(obstacleDetect):
                     condition()
-                    uturn()
-            if False:
-                pass
-            normalForward() # for 10 second
-        uturn() 
-        # Pause for 1 second
-        time.sleep(1)
-        print("Loop finished")
-    # Code outside the 10-second loop at the end of each round
-    print(f"Round {round + 1} finished")
+                
+                uturn()
+                if False:
+                    pass
+                normalForward() # for 10 second
+            uturn() 
+            # Pause for 1 second
+            time.sleep(1)
+            print("Loop finished")
+            print("Round {r} Finished", r)
 
-print("Round Finished")
-
-
-
-
-    
         
         # Check the whether the robot is climbing
         if abs(KalmanAnglePitch) > criticalAngle:
@@ -495,4 +423,69 @@ print("Round Finished")
         delay(1)
         '''
         
-    
+        '''  
+        # ultrasonic sensor
+        front1 = distance(front1_trig, front1_echo)
+        front2 = distance(front2_trig, front2_echo)
+        front3 = distance(front3_trig, front3_echo)
+        left1 = distance(left1_trig, left1_echo)
+        left2 = distance(left2_trig, left2_echo)
+        right1 = distance(right1_trig, right1_echo)
+        right2 = distance(right2_trig, right2_echo)
+        bottom1 = distance(bottom1_trig, bottom1_echo)
+        bottom2 = distance(bottom2_trig, bottom2_echo)
+
+        mindistance = 10
+        t = 5 # t that robot move 1 grid
+
+        # front obstacle
+        if (front1 < mindistance and front2 < mindistance) or (front1 < mindistance):
+            print('Stop')
+            slowForward()
+            print('Backward')
+            print('Right')
+            print('Forward until all left clear')
+            print('Left')
+            print('Forward for t second')
+            print('Forward until all left clear')
+            print('Left')
+            print('Forward until all left found') # can be changed to 'for t second'
+            print('Right') # back to origin track
+            normalForward()
+            print('Forward')
+
+        if (front3 < mindistance and front2 < mindistance) or (front3 < mindistance):
+            print('Stop')
+            slowForward()
+            print('Backward')
+            print('Left')
+            print('Forward until all right clear')
+            print('Right')
+            print('Forward for t second')
+            print('Forward until all right clear')
+            print('Right')
+            print('Forward until all right found') # can be changed to 'for t second'
+            print('Left') # back to origin track
+            normalForward()
+            print('Forward')
+
+        if front1 < mindistance and front2 < mindistance and front3 < mindistance:
+            print('Stop')
+            slowForward()
+            print('Backward')
+            print('Left')
+            print('Forward until right clear')
+            print('Right')
+            print('Forward for t second')
+            print('Forward until right clear')
+            print('Right')
+            print('Forward until right found') # can be changed to 'for t second'
+            print('Left') # back to origin track
+            normalForward()
+            print('Forward')
+
+        ## What if face dead end???
+        # distance between left and right is not enough to detect narrow track
+        # but it is too naroow to turn around
+        
+        '''
