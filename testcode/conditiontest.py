@@ -1,3 +1,6 @@
+# This code is for testing the condition of the robot
+# It will be used for the obstacle avoidance
+
 frontsensor = [0, 10, 0]
 leftsensor = [10, 10]
 rightsensor = [10, 10]
