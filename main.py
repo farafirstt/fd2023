@@ -3,6 +3,8 @@ from threading import Thread
 import serial
 from time import sleep as delay
 import math
+import rpi.GPIO as GPIO
+import time
 # import matplotlib.pyplot as plt
 
 
@@ -85,6 +87,100 @@ errCnt = 0
 sentRoutine = 0
 criticalAngle = 20
 
+# ---------- Set GPIO pin for ultrasonic sensor
+# Note: if echo pin is the same pin, use the same variable -> echo
+front1_trig = 0
+front1_echo = 0
+front2_trig = 0
+front2_echo = 0
+front3_trig = 0
+front3_echo = 0
+
+left1_trig = 0
+left1_echo = 0
+left2_trig = 0
+left2_echo = 0
+
+right1_trig = 0
+right1_echo = 0
+right2_trig = 0
+right2_echo = 0
+
+bottom1_trig = 0
+bottom1_echo = 0
+bottom2_trig = 0
+bottom2_echo = 0
+
+# Set up GPIO pins
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(front1_trig, GPIO.OUT)
+GPIO.setup(front1_echo, GPIO.IN)
+GPIO.setup(front2_trig, GPIO.OUT)
+GPIO.setup(front2_echo, GPIO.IN)
+GPIO.setup(front3_trig, GPIO.OUT)
+GPIO.setup(front3_echo, GPIO.IN)
+
+GPIO.setup(left1_trig, GPIO.OUT)
+GPIO.setup(left1_echo, GPIO.IN)
+GPIO.setup(left2_trig, GPIO.OUT)
+GPIO.setup(left2_echo, GPIO.IN)
+
+GPIO.setup(right1_trig, GPIO.OUT)
+GPIO.setup(right1_echo, GPIO.IN)
+GPIO.setup(right2_trig, GPIO.OUT)
+GPIO.setup(right2_echo, GPIO.IN)
+
+GPIO.setup(bottom1_trig, GPIO.OUT)
+GPIO.setup(bottom1_echo, GPIO.IN)
+GPIO.setup(bottom2_trig, GPIO.OUT)
+GPIO.setup(bottom2_echo, GPIO.IN)
+
+# ultrasonic sensor function
+def distance(trig, echo):
+    GPIO.output(trig, False)
+    time.sleep(0.5)
+    
+    GPIO.output(trig, True)
+    time.sleep(0.00001)
+    GPIO.output(trig, False)
+    
+    while GPIO.input(echo) == 0:
+        pulse_start = time.time()
+        
+    while GPIO.input(echo) == 1:
+        pulse_end = time.time()
+        
+    pulse_duration = pulse_end - pulse_start
+    distance = pulse_duration * 17150
+    distance = round(distance, 2)
+    
+    return distance
+
+def IsNarrow():
+    # front narrow track
+    if left1 < mindistance and right1 < mindistance:
+        return True
+    else: 
+        return False
+
+def slowForward(): # while checking the distance
+    print('transmit slow speed to arduino')
+    
+    '''
+    acceleration = -10
+    for i in range(0,4):
+        print("transmit acceleation to arduino")
+'''
+def normalForward(): # after checking the distance
+    print('transmit normal speed to arduino')
+    
+    '''
+    acceleration = 10
+    for i in range(0,4):
+        print("transmit acceleation to arduino")
+'''
+def 
+
 
 ## ---------- Main program
 if __name__ == '__main__':
@@ -122,7 +218,74 @@ if __name__ == '__main__':
         P = db.yaw * Kp + D * Kdjk
         transmit(ser, f'{baseSpeed + P}_{baseSpeed - P}')
         
+        # ultrasonic sensor
+        front1 = distance(front1_trig, front1_echo)
+        front2 = distance(front2_trig, front2_echo)
+        front3 = distance(front3_trig, front3_echo)
+        left1 = distance(left1_trig, left1_echo)
+        left2 = distance(left2_trig, left2_echo)
+        right1 = distance(right1_trig, right1_echo)
+        right2 = distance(right2_trig, right2_echo)
+        bottom1 = distance(bottom1_trig, bottom1_echo)
+        bottom2 = distance(bottom2_trig, bottom2_echo)
 
+        mindistance = 10
+        t = 5 # t that robot move 1 grid
+
+        # front obstacle
+        if (front1 < mindistance and front2 < mindistance) or (front1 < mindistance):
+            print('Stop')
+            slowForward()
+            print('Backward')
+            print('Right')
+            print('Forward until all left clear')
+            print('Left')
+            print('Forward for t second')
+            print('Forward until all left clear')
+            print('Left')
+            print('Forward until all left found') # can be changed to 'for t second'
+            print('Right') # back to origin track
+            normalForward()
+            print('Forward')
+
+        if (front3 < mindistance and front2 < mindistance) or (front3 < mindistance):
+            print('Stop')
+            slowForward()
+            print('Backward')
+            print('Left')
+            print('Forward until all right clear')
+            print('Right')
+            print('Forward for t second')
+            print('Forward until all right clear')
+            print('Right')
+            print('Forward until all right found') # can be changed to 'for t second'
+            print('Left') # back to origin track
+            normalForward()
+            print('Forward')
+
+        if front1 < mindistance and front2 < mindistance and front3 < mindistance:
+            print('Stop')
+            slowForward()
+            print('Backward')
+            print('Left')
+            print('Forward until right clear')
+            print('Right')
+            print('Forward for t second')
+            print('Forward until right clear')
+            print('Right')
+            print('Forward until right found') # can be changed to 'for t second'
+            print('Left') # back to origin track
+            normalForward()
+            print('Forward')
+
+        ## What if face dead end???
+        # distance between left and right is not enough to detect narrow track
+        # but it is too narooow to turn around
+        
+
+
+
+    
         
         # Check the whether the robot is climbing
         if abs(KalmanAnglePitch) > criticalAngle:
