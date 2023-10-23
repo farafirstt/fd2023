@@ -17,7 +17,9 @@ KalmanUncertaintyAngleYaw = 2 * 2
 KalmanDOutput = [0, 0]
 
 def kalman_1d(KalmanState, KalmanUncertainty, KalmanMeasurement):
-    
+    # KalmanState = predicted value
+    # KalmanUncertainty = predicted uncertainty
+    # KalmanMeasurement = measured value
     KalmanGain = KalmanUncertainty * 1 / (1 * KalmanUncertainty + 3 * 3)
     KalmanState = KalmanState + KalmanGain * (KalmanMeasurement - KalmanState)
     KalmanUncertainty = (1 - KalmanGain) * KalmanUncertainty
@@ -26,7 +28,7 @@ def kalman_1d(KalmanState, KalmanUncertainty, KalmanMeasurement):
     
     # print(f'Predict: {KalmanState}, Measured: {KalmanMeasurement}')
     return KalmanState, KalmanMeasurement
-    
+
 def KalmanCal(show):
     global KalmanAngleYaw, KalmanAnglePitch, KalmanUncertaintyAngleYaw, KalmanUncertaintyAnglePitch, KalmanDOutput
     Ax = db.acc.x
@@ -38,15 +40,14 @@ def KalmanCal(show):
 
     AnglePitch = math.atan(Ay / math.sqrt(Ax * Ax + Az * Az)) * 1 / (3.142 / 180);
     # AngleRoll = -math.atan(Ax / math.sqrt(Ay * Ay + Az * Az)) * 1 / (3.142 / 180);
-    AngleYaw = math.atan(Az / math.sqrt(Az * Az + Az * Az)) * 1 / (3.142 / 180);
-     
+    AngleYaw = math.atan(-Gx / math.sqrt(Gy * Gy + Gz * Gz)) * 1 / (3.142 / 180)
 
     # print ("Gx=%.2f" %Gx, u'\u00b0'+ "/s", "\tGy=%.2f" %Gy, u'\u00b0'+ "/s", "\tGz=%.2f" %Gz, u'\u00b0'+ "/s", "\tAx=%.2f g" %Ax, "\tAy=%.2f g" %Ay, "\tAz=%.2f g" %Az) 	
     if show:
         print('G: x-%.2f y-%.2f z-%.2f\t\tA: x-%.2f y-%.2f z-%.2f' % (Gx, Gy, Gz, Ax, Ay, Az))
 
     # Kalman filter for pitch
-    timeConst = 0.2 
+    timeConst = 0.2
     pitchVal = kalman_1d(
         KalmanAnglePitch + timeConst * Gx, 
         KalmanUncertaintyAnglePitch + timeConst * timeConst * 16, 
@@ -55,25 +56,17 @@ def KalmanCal(show):
     KalmanUncertaintyAnglePitch = KalmanDOutput[1];
     
     # Kalman filter for yaw
-    def kalman_yaw(KalmanState, KalmanUncertainty, KalmanInput):
-    KalmanState = KalmanState + timeConstYaw * KalmanInput
-    KalmanUncertainty = KalmanUncertainty + timeConstYaw * timeConstYaw * 16
+    timeConst = 0.2
+    yawVal = kalman_1d(
+        KalmanAngleYaw + timeConst * Gz, 
+        KalmanUncertaintyAngleYaw + timeConst * timeConst * 16, 
+        AngleYaw);
+    KalmanAngleYaw = KalmanDOutput[0];
+    KalmanUncertaintyAngleYaw = KalmanDOutput[1];
     
-    KalmanGain = KalmanUncertainty / (KalmanUncertainty + 16)
-    KalmanState = KalmanState + KalmanGain * (0 - KalmanState)  # Assuming yaw measurement is 0 for simplicity
-    KalmanUncertainty = (1 - KalmanGain) * KalmanUncertainty
-    
-    return KalmanState, KalmanUncertainty
-
-    # Update yaw using Kalman filter
-    pitchVal = kalman_yaw(KalmanAngleYaw, KalmanUncertaintyAngleYaw, Gz)
-    KalmanAngleYaw = pitchVal[0]
-    KalmanUncertaintyAngleYaw = pitchVal[1]
-    
-    
-    print(f'localPitch: {AnglePitch}, localPitch: {AngleYaw}')
-    return pitchVal, YawVal
-        
+    print(f'localPitch: {AnglePitch}')
+    print(f'localYaw: {AngleYaw}')
+    return pitchVal, yawVal
 
 ## ---------- Serial command functions
 def transmit(port, txt):
@@ -156,69 +149,43 @@ def distance(trig, echo):
     
     return distance
 
-def IsNarrow():
-    # front narrow track
-    if left1 < mindistance and right1 < mindistance:
-        return True
-    else: 
-        return False
+# Set up ultrasonic sensor
+frontsensor = [distance(front1_trig, front1_echo), distance(front2_trig, front2_echo), distance(front3_trig, front3_echo)]
+leftsensor = [distance(left1_trig, left1_echo), distance(left2_trig, left2_echo)]
+rightsensor = [distance(right1_trig, right1_echo), distance(right2_trig, right2_echo)]
 
-def slowForward(): # while checking the distance
-    print('transmit slow speed to arduino')
+threshold = 10 # threshold for ultrasonic
+
+def obstacle():
+    condition =''
+    if frontsensor[1] < threshold and (frontsensor[0] < threshold or leftsensor[0] < threshold or leftsensor[1] < threshold):
+        condition = 'Right45'
+    elif frontsensor[1] < threshold and (frontsensor[2] < threshold or rightsensor[0] < threshold or rightsensor[1] < threshold):
+        condition = 'Left45'
+    elif any(i < threshold for i in leftsensor) and any(i < threshold for i in rightsensor):
+        pass
+    elif frontsensor[0] < threshold or leftsensor[0] < threshold or leftsensor[1] < threshold:
+        condition = 'Right45'
+    elif frontsensor[2] < threshold or rightsensor[0] < threshold or rightsensor[1] < threshold:
+        condition = 'Left45'
+    elif frontsensor[1] < threshold:
+        condition = 'Right45'
     
-    '''
-    acceleration = -10
-    for i in range(0,4):
-        print("transmit acceleation to arduino")
-'''
-def normalForward(): # after checking the distance
-    print('transmit normal speed to arduino')
-    
-    '''
-    acceleration = 10
-    for i in range(0,4):
-        print("transmit acceleation to arduino")
-'''
+    return condition
+
 def uturn():
-    print("transmit stop speed to arduino then uturn")
+    # grid = size of car
+    t = 10 # t for 1 size of grid
+    print('Stop')
+    print('Backward')
+    time.sleep(1)
+    print('Right')
+    print('Forward')
+    time.sleep(t)
+    print('Right')
 
-    print("left_motor_pin1, True")
-    print("left_motor_pin2, False")
-    print("right_motor_pin1, False")
-    print("right_motor_pin2, True")
-
-    '''
-    acceleration = 10 #ปรับความเร็วอีกที
-
-    for i in range(0,4):
-        print("transmit acceleation to arduino")
-'''
-
-
-a = 0
-
-def condition(a):
-    if front1 < mindistance and left1 < mindistance and left2< mindistance:
-        a = 1
-        print(" backward then turn right 45 until none sensoring")
-    elif front2< mindistance and right1 < mindistance and right2< mindistance:
-        a = 2
-        print(" backward then turn left 45 until none sensoring")
-        
-    return a
-
-
-def obstacleDetect(a):
-    thres = 10 # ultrasonic sensor threshold
-    if 
-
-    if a == 1 or a == 2:
-        print("detect !!!!!! obstacle")
-        return True
-    elif a == 0:
-        print("didnt find any obstacle")
-        return False
-    return a
+def stop():
+    pass
 
 
 ## ---------- Main program
@@ -230,11 +197,6 @@ if __name__ == '__main__':
     # Initiate serial communication
     ser = serial.Serial('/dev/ttyS0', 115200, timeout=1)
     ser.reset_input_buffer()
-
-    # Set up for ultrasonic sensor
-    frontsensor = [distance(front1_trig, front1_echo), distance(front2_trig, front2_echo), distance(front3_trig, front3_echo)]
-    leftsensor = [distance(left1_trig, left1_echo), distance(left2_trig, left2_echo)]
-    rightsensor = [distance(right1_trig, right1_echo), distance(right2_trig, right2_echo)]
             
         
     # Main program
@@ -258,36 +220,21 @@ if __name__ == '__main__':
         prev = current
         
         # PID calculaiton & motor speed set
-        P = db.yaw * Kp + D * Kdjk
+        P = db.yaw * Kp + D * Kd
         transmit(ser, f'{baseSpeed + P}_{baseSpeed - P}')
 
-
-        import time
-        # Set the number of iterations (1 iteration per second for 10 seconds)
-        num_iterations = 10
-            # Define the duration for obstacle detection (1 second)
-        obstacle_detection_duration = 1  # 1 second
-   
         # set rounds
-        num_rounds = 15
-            # Loop for 10 seconds
-        for r in range(num_rounds):
-            for t in range(num_iterations):
-                # Your code to be executed during each iteration
-                print("Inside the loop")
-
-                while(obstacleDetect):
-                    condition()
-                
-                uturn()
-                if False:
-                    pass
-                normalForward() # for 10 second
-            uturn() 
-            # Pause for 1 second
+        if obstacle:
+            print("Backward")
             time.sleep(1)
-            print("Loop finished")
-            print("Round {r} Finished", r)
+            print(obstacle)
+
+        #ser data sending routine for direction control
+        elif sentDir < 100:
+            sentDir+= 1
+        else:
+            sentDir = 0
+            print("Uturn")
 
         
         # Check the whether the robot is climbing
@@ -311,7 +258,7 @@ if __name__ == '__main__':
             delay(15)
             
             
-        # set data sending routine
+        # set data sending routine for speed control
         elif sentRoutine < 5:
             sentRoutine+= 1
         else:
@@ -319,7 +266,7 @@ if __name__ == '__main__':
             ser.write(bytes(f"60_60\n", 'utf-8'))
             print('sent')
         
-        
+            
         
         delay(0.1)
     
