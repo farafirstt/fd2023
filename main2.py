@@ -80,6 +80,9 @@ errCnt = 0
 sentRoutine = 0
 criticalAngle = 20
 
+# grid = size of car
+tpg = 10 # t for 1 size of grid
+
 # ---------- Set GPIO pin for ultrasonic sensor
 # Note: if echo pin is the same pin, use the same variable -> echo
 front1_trig = 0
@@ -156,6 +159,82 @@ rightsensor = [distance(right1_trig, right1_echo), distance(right2_trig, right2_
 
 threshold = 10 # threshold for ultrasonic
 
+# ---------- Function for motor control
+def stop():
+    ser.write(bytes(f"0_0\n", 'utf-8'))
+    delay(2)
+
+def forward(time):
+    ser.write(bytes(f"60_60\n", 'utf-8'))
+    delay(time)
+
+def slowForward(time):
+    ser.write(bytes(f"30_30\n", 'utf-8'))
+    delay(time)
+
+def backward(time):
+    ser.write(bytes(f"-60_-60\n", 'utf-8'))
+    delay(time)
+
+def left():
+    db.get()
+    prevYaw = db.yaw
+    ser.write(bytes(f"-60_60\n", 'utf-8'))
+    delay(1)
+    dYaw = db.yaw - prevYaw
+    while abs(dYaw) < 90:
+        dYaw = db.yaw - prevYaw
+        ser.write(bytes(f"-60_60\n", 'utf-8'))
+        delay(0.1)
+    stop()
+
+def right():
+    db.get()
+    prevYaw = db.yaw
+    ser.write(bytes(f"60_-60\n", 'utf-8'))
+    delay(1)
+    dYaw = db.yaw - prevYaw
+    while abs(dYaw) < 90:
+        dYaw = db.yaw - prevYaw
+        ser.write(bytes(f"60_-60\n", 'utf-8'))
+        delay(0.1)
+
+def left45():
+    db.get()
+    prevYaw = db.yaw
+    ser.write(bytes(f"-60_60\n", 'utf-8'))
+    delay(1)
+    dYaw = db.yaw - prevYaw
+    while abs(dYaw) < 45:
+        dYaw = db.yaw - prevYaw
+        ser.write(bytes(f"-60_60\n", 'utf-8'))
+        delay(0.1)
+    stop()
+
+def right45():
+    db.get()
+    prevYaw = db.yaw
+    ser.write(bytes(f"60_-60\n", 'utf-8'))
+    delay(1)
+    dYaw = db.yaw - prevYaw
+    while abs(dYaw) < 45:
+        dYaw = db.yaw - prevYaw
+        ser.write(bytes(f"60_-60\n", 'utf-8'))
+        delay(0.1)
+    stop()
+    
+def uturn():
+    print('Stop')
+    stop()
+    print('Backward')
+    backward(2)
+    print('Right')
+    right()
+    print('Forward')
+    forward(tpg)
+    print('Right')
+    right()
+
 def obstacle():
     condition =''
     if frontsensor[1] < threshold and (frontsensor[0] < threshold or leftsensor[0] < threshold or leftsensor[1] < threshold):
@@ -172,21 +251,6 @@ def obstacle():
         condition = 'Right45'
     
     return condition
-
-def uturn():
-    # grid = size of car
-    t = 10 # t for 1 size of grid
-    print('Stop')
-    print('Backward')
-    time.sleep(1)
-    print('Right')
-    print('Forward')
-    time.sleep(t)
-    print('Right')
-
-def stop():
-    pass
-
 
 ## ---------- Main program
 if __name__ == '__main__':
@@ -226,8 +290,13 @@ if __name__ == '__main__':
         # set rounds
         if obstacle:
             print("Backward")
+            backward()
             time.sleep(1)
             print(obstacle)
+            if obstacle == 'Right45':
+                right45()
+            elif obstacle == 'Left45':
+                left45()
 
         #ser data sending routine for direction control
         elif sentDir < 100:

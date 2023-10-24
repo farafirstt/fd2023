@@ -26,12 +26,12 @@ def kalman_1d(KalmanState, KalmanUncertainty, KalmanMeasurement):
 
 def KalmanCal(show):
     global KalmanAngleYaw, KalmanAnglePitch, KalmanUncertaintyAngleYaw, KalmanUncertaintyAnglePitch, KalmanDOutput
-    Ax = 0.16496
-    Ay = -0.24942
-    Az = -0.92068
-    Gx = -0.26647
-    Gy = 0.26076
-    Gz = 0.50096
+    Ax = 0.51100
+    Ay = 0.31308
+    Az = -0.73647
+    Gx = 0.80320
+    Gy = 2.93045
+    Gz = -3.33457
 
     AnglePitch = math.atan(Ay / math.sqrt(Ax * Ax + Az * Az)) * 1 / (3.142 / 180);
     # AngleRoll = -math.atan(Ax / math.sqrt(Ay * Ay + Az * Az)) * 1 / (3.142 / 180);
