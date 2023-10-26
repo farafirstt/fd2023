@@ -265,6 +265,8 @@ def manual_mode(state):
                 left()
             elif keyboard.is_pressed('q'):
                 right()
+            elif keyboard.is_pressed('r'):
+                stop()
         except KeyboardInterrupt:
             break
 
