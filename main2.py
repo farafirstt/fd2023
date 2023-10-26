@@ -5,6 +5,7 @@ from time import sleep as delay
 import math
 import rpi.GPIO as GPIO
 import time
+import keyboard
 # import matplotlib.pyplot as plt
 
 
@@ -252,6 +253,22 @@ def obstacle():
     
     return condition
 
+## ---------- Manual control
+def manual_mode(state):
+    while state:
+        try:
+            if keyboard.is_pressed('w'):
+                forward(0.2)
+            elif keyboard.is_pressed('s'):
+                backward(0.2)
+            elif keyboard.is_pressed('e'):
+                left()
+            elif keyboard.is_pressed('q'):
+                right()
+        except KeyboardInterrupt:
+            break
+
+
 ## ---------- Main program
 if __name__ == '__main__':
     # Start multiprocess
@@ -335,7 +352,10 @@ if __name__ == '__main__':
             ser.write(bytes(f"60_60\n", 'utf-8'))
             print('sent')
         
-            
+        # manual control
+        if keyboard.is_pressed('m'):
+            manual_mode(True)
+            manual_mode(False)
         
         delay(0.1)
     
