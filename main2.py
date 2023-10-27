@@ -239,16 +239,21 @@ def uturn():
 def obstacle():
     condition =''
     if frontsensor[1] < threshold and (frontsensor[0] < threshold or leftsensor[0] < threshold or leftsensor[1] < threshold):
+        print(frontsensor[1], frontsensor[0], leftsensor[0], leftsensor[1])
         condition = 'Right45'
     elif frontsensor[1] < threshold and (frontsensor[2] < threshold or rightsensor[0] < threshold or rightsensor[1] < threshold):
+        print(frontsensor[1], frontsensor[2], rightsensor[0], rightsensor[1])
         condition = 'Left45'
     elif any(i < threshold for i in leftsensor) and any(i < threshold for i in rightsensor):
         pass
     elif frontsensor[0] < threshold or leftsensor[0] < threshold or leftsensor[1] < threshold:
+        print(frontsensor[0], leftsensor[0], leftsensor[1])
         condition = 'Right45'
     elif frontsensor[2] < threshold or rightsensor[0] < threshold or rightsensor[1] < threshold:
+        print(frontsensor[2], rightsensor[0], rightsensor[1])
         condition = 'Left45'
     elif frontsensor[1] < threshold:
+        print(frontsensor[1])
         condition = 'Right45'
     
     return condition
@@ -257,6 +262,7 @@ def obstacle():
 def manual_mode(state):
     while state:
         try:
+            stop()
             if keyboard.is_pressed('w'):
                 forward(0.2)
             elif keyboard.is_pressed('s'):
@@ -286,7 +292,11 @@ if __name__ == '__main__':
     I = 0
     D = 0
     prev = 0
+
+    
+    ser.write(bytes(f"50_50\n", 'utf-8'))
     while True:
+        break
         # Get data from database
         db.get()
         print(db.yaw)
@@ -297,14 +307,19 @@ if __name__ == '__main__':
         # Set value for PID
         Kp = 1.2
         Kd = 0.6
-        baseSpeed = 60
+        baseSpeed = 100
         current = db.yaw
         D = current - prev
         prev = current
         
         # PID calculaiton & motor speed set
         P = db.yaw * Kp + D * Kd
-        transmit(ser, f'{baseSpeed + P}_{baseSpeed - P}')
+        ser.write(bytes(f"{baseSpeed + P}_{baseSpeed - P}\n", 'utf-8'))
+        # transmit(ser, f'{baseSpeed + P}_{baseSpeed - P}')
+
+        # read arduino serial
+        line = ser.readline().decode('utf-8').rstrip()
+        print("Arduino: ",line)
 
         # set rounds
         if obstacle:
@@ -358,6 +373,8 @@ if __name__ == '__main__':
         if keyboard.is_pressed('m'):
             manual_mode(True)
             manual_mode(False)
+
+        
         
         delay(0.1)
     
@@ -459,9 +476,8 @@ if __name__ == '__main__':
         
         
         delay(1)
-        '''
         
-        '''  
+        
         # ultrasonic sensor
         front1 = distance(front1_trig, front1_echo)
         front2 = distance(front2_trig, front2_echo)

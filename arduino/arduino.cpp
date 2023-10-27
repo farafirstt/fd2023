@@ -58,10 +58,11 @@ void loop() {
   if (stringComplete) {
     // Split the string into two parts using the underscore
     int value1, value2;
+    // serial.print("Received: %d_%d", &value1, &value2);
     sscanf(inputString.c_str(), "%d_%d", &value1, &value2);
 
     digitalWrite(DIR_A, value1 > 0 ? HIGH : LOW);
-    digitalWrite(DIR_B, value1 > 0 ? HIGH : LOW);
+    digitalWrite(DIR_B, value2 > 0 ? HIGH : LOW);
     
     // Clear the inputString and reset the flag
     inputString = "";
